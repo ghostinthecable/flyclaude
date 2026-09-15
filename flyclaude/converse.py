@@ -123,7 +123,10 @@ def _call(prompt: str, system: str | None = None, timeout: int = 180) -> str:
     cmd = [exe, "-p", prompt]
     if system:
         cmd += ["--append-system-prompt", system]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    # DEVNULL is essential: without it the subprocess inherits our stdin
+    # and eats the keystrokes meant for the chat prompt.
+    proc = subprocess.run(cmd, capture_output=True, text=True,
+                          stdin=subprocess.DEVNULL, timeout=timeout)
     if proc.returncode != 0:
         raise RuntimeError(f"claude exited {proc.returncode}: {proc.stderr.strip()[:400]}")
     return proc.stdout.strip()

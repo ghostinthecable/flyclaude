@@ -52,9 +52,12 @@ def _call(prompt: str, timeout: int = 180) -> str:
             "the `claude` CLI is not on PATH -- install Claude Code, or "
             "run with --dry-run to see the prompt instead."
         )
+    # DEVNULL is essential: without it the subprocess inherits our stdin
+    # and eats the keystrokes meant for the chat prompt.
     proc = subprocess.run(
         [exe, "-p", prompt],
-        capture_output=True, text=True, timeout=timeout,
+        capture_output=True, text=True,
+        stdin=subprocess.DEVNULL, timeout=timeout,
     )
     if proc.returncode != 0:
         raise RuntimeError(

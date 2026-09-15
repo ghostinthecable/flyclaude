@@ -2,15 +2,40 @@ from __future__ import annotations
 
 import argparse
 import random
+import shutil
 import sys
 import textwrap
 
 from . import ask, converse, explore, graph, interpret, sim
 from .stimuli import STIMULI, resolve
 
-W = 76
 C = {"dim": "\033[2m", "b": "\033[1m", "fly": "\033[38;5;179m",
      "cl": "\033[38;5;110m", "hum": "\033[38;5;108m", "r": "\033[0m"}
+
+
+def term_width(cap=92):
+    """Actual terminal width, clamped to something readable."""
+    try:
+        w = shutil.get_terminal_size(fallback=(80, 24)).columns
+    except Exception:
+        w = 80
+    return max(46, min(w - 2, cap))
+
+
+W = term_width()
+
+
+def trim(text, n):
+    """Cut to n chars on a word boundary, with an ellipsis if we cut."""
+    text = " ".join(text.split())
+    if len(text) <= n:
+        return text
+    if n <= 1:
+        return text[:n]
+    cut = text[:n - 1]
+    if " " in cut:
+        cut = cut[:cut.rindex(" ")]
+    return cut.rstrip(" .,;:") + "\u2026"
 
 
 def _c(k, s):
@@ -26,9 +51,15 @@ def _wrap(s, indent="    "):
 
 
 def _banner():
-    print(_c("dim", "=" * W))
-    print(f"  {_c('b', 'FLYCLAUDE')}  ::  FlyWire FAFB v783  ::  144,837 neurons, one fly")
-    print(_c("dim", "=" * W))
+    w = term_width()
+    full = "  {}  ::  FlyWire FAFB v783  ::  144,837 neurons, one fly"
+    mid = "  {}  ::  FlyWire FAFB v783"
+    for form in (full, mid, "  {}"):
+        if len(form.format("FLYCLAUDE")) <= w:
+            break
+    print(_c("dim", "=" * w))
+    print(form.format(_c("b", "FLYCLAUDE")))
+    print(_c("dim", "=" * w))
 
 
 def _think(conn, stim, a, seed=None):
@@ -40,44 +71,59 @@ def _think(conn, stim, a, seed=None):
     return res, rd, interpret.brain_state(conn, stim, res, rd)
 
 
-def pick_stimulus(rng, prompt="  what happens to her first?"):
-    """Numbered menu. Enter = random, q = quit."""
-    keys = sorted(STIMULI)
-    print(f"\n{prompt}\n")
-    width = max(len(k) for k in keys)
-    half = (len(keys) + 1) // 2
-    for i in range(half):
-        cells = []
-        for j in (i, i + half):
-            if j < len(keys):
-                k = keys[j]
-                cells.append(f"  {_c('b', f'{j + 1:2}')}. {k:<{width}} "
-                             f"{_c('dim', STIMULI[k].action[:34])}")
-        print("".join(f"{c:<58}" for c in cells).rstrip())
-    print(_c("dim", "\n   ENTER for random, or type a name/number  (q to quit)"))
+def pick_stimulus(rng, prompt="what happens to her first?"):
+    """Grouped, width-aware menu. ENTER = random, q = quit."""
+    width = term_width()
+    # group order follows stimuli.toml, which reads in sensory order;
+    # names stay alphabetical within each group.
+    order = {}
+    for k, st in STIMULI.items():
+        order.setdefault(st.group, len(order))
+    keys = sorted(STIMULI, key=lambda k: (order[STIMULI[k].group], k))
+    numbered = {str(i + 1): k for i, k in enumerate(keys)}
+    namew = max(len(k) for k in keys)
+    # "    12  name  action"
+    gutter = 4 + len(str(len(keys))) + 2 + namew + 2
+    actw = max(16, width - gutter)
+
+    print(f"\n  {_c('b', prompt)}")
+    last_group = None
+    for i, k in enumerate(keys, 1):
+        st = STIMULI[k]
+        if st.group != last_group:
+            print(f"\n  {_c('dim', st.group)}")
+            last_group = st.group
+        num = _c("b", f"{i:>{len(str(len(keys)))}}")
+        act = trim(st.action or st.label, actw)
+        print(f"    {num}  {k:<{namew}}  {_c('dim', act)}")
+    hint = ("ENTER for a random one, or type a number or name.  q to quit."
+            if width >= 64 else "ENTER = random, or a number.  q to quit.")
+    print(f"\n  {_c('dim', hint)}")
+
     while True:
         try:
-            raw = input(_c("dim", "   > ")).strip()
+            raw = input("  > ").strip()
         except (EOFError, KeyboardInterrupt):
             print()
             return None
         if not raw:
             k = rng.choice(keys)
-            print(_c("dim", f"   -> {k}"))
+            print(_c("dim", f"  -> {k}"))
             return STIMULI[k]
         if raw.lower() in {"q", "quit", "exit"}:
             return None
-        if raw.isdigit() and 1 <= int(raw) <= len(keys):
-            return STIMULI[keys[int(raw) - 1]]
-        if raw in STIMULI:
-            return STIMULI[raw]
-        matches = [k for k in keys if k.startswith(raw.lower())]
+        if raw in numbered:
+            return STIMULI[numbered[raw]]
+        low = raw.lower()
+        if low in STIMULI:
+            return STIMULI[low]
+        matches = [k for k in keys if k.startswith(low)]
         if len(matches) == 1:
             return STIMULI[matches[0]]
         if matches:
-            print(_c("dim", f"   ambiguous: {', '.join(matches)}"))
+            print(_c("dim", f"    which one? {', '.join(matches)}"))
         else:
-            print(_c("dim", "   no such stimulus. try a number, or the name."))
+            print(_c("dim", "    no such stimulus. type a number, or part of a name."))
 
 
 def _show_brain(stim, res, state, verbose):
@@ -195,7 +241,7 @@ def cmd_chat(a, conn, rng):
         if line.startswith("!"):
             k = line[1:].strip().lower()
             if not k:
-                chosen = pick_stimulus(rng, "  what do you do to her instead?")
+                chosen = pick_stimulus(rng, "what do you do to her instead?")
                 if chosen is not None:
                     stim = chosen
             elif k in STIMULI:
@@ -269,17 +315,37 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
 
     if a.cmd == "stimuli" and not a.check:
-        width = max(len(k) for k in STIMULI)
-        for k, st in sorted(STIMULI.items()):
+        width = term_width()
+        order = {}
+        for k, st in STIMULI.items():
+            order.setdefault(st.group, len(order))
+        keys = sorted(STIMULI, key=lambda k: (order[STIMULI[k].group], k))
+        last = None
+        for k in keys:
+            st = STIMULI[k]
+            if st.group != last:
+                print(f"\n  {_c('dim', st.group.upper())}")
+                last = st.group
             tag = "" if st.source == "stimuli.toml" else f"  [{st.source}]"
-            print(f"\n  {_c('b', k)}{tag}")
-            print(f"    {st.label}")
+            print(f"\n    {_c('b', k)}{tag}")
+            for line in textwrap.wrap(st.label, width - 6):
+                print(f"      {line}")
             if st.action:
-                print(f"    {_c('dim', 'you ' + st.action)}")
-            print(f"    {_c('dim', st.describe_selection())}")
-        print(f"\n  {len(STIMULI)} stimuli. Add your own in stimuli.toml "
-              f"(or stimuli.local.toml).")
-        print(f"  {_c('dim', 'flyclaude explore  -- see what else you can stimulate')}\n")
+                for line in textwrap.wrap("you " + st.action, width - 6):
+                    print(_c("dim", f"      {line}"))
+            for line in textwrap.wrap(st.describe_selection(), width - 6,
+                                      break_long_words=False):
+                print(_c("dim", f"      {line}"))
+        foot = (f"{len(STIMULI)} stimuli. Add your own in stimuli.toml, or "
+                f"stimuli.local.toml.")
+        print()
+        for line in textwrap.wrap(foot, width - 4):
+            print(f"  {line}")
+        for line in textwrap.wrap(
+                "flyclaude explore  --  see what else you can stimulate",
+                width - 4):
+            print(_c("dim", f"  {line}"))
+        print()
         return 0
 
     _banner()

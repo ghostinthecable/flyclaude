@@ -38,12 +38,14 @@ class Stimulus:
     label: str                       # what happened, from the fly's side
     action: str = ""                 # how a human in the room would cause it
     drive: float = 1.2               # injected current per timestep
+    group: str = "other"             # menu heading
     select: dict = field(default_factory=dict)
     source: str = "built-in"
 
     def describe_selection(self) -> str:
-        return ", ".join(
-            f"{k}={'|'.join(v) if isinstance(v, list) else v}"
+        # spaces around the separators so this can be word-wrapped
+        return ",  ".join(
+            f"{k}={' | '.join(v) if isinstance(v, list) else v}"
             for k, v in self.select.items()
         )
 
@@ -54,7 +56,7 @@ def _parse(raw: dict, source: str) -> dict:
         if not isinstance(body, dict):
             raise SystemExit(f"{source}: [stimuli.{key}] must be a table")
         select = {k: v for k, v in body.items() if k in SELECTORS}
-        unknown = set(body) - set(SELECTORS) - {"label", "action", "drive"}
+        unknown = set(body) - set(SELECTORS) - {"label", "action", "drive", "group"}
         if unknown:
             raise SystemExit(
                 f"{source}: [stimuli.{key}] has unknown field(s): "
@@ -74,6 +76,7 @@ def _parse(raw: dict, source: str) -> dict:
             label=body["label"],
             action=body.get("action", ""),
             drive=float(body.get("drive", 1.2)),
+            group=body.get("group", "other"),
             select=select,
             source=source,
         )

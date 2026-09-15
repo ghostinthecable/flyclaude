@@ -10,6 +10,7 @@
 #                        what Claude picks from, so write it as a thing to DO
 #    drive               injected current per timestep (default 1.2). Turn it
 #                        up for tiny populations, down for huge ones.
+#    group               heading to file it under in the menu, e.g. "seeing"
 #
 #  Selectors (at least one required, all optional, all ANDed):
 #    cell_class          e.g. "olfactory_receptor_neuron"
@@ -29,6 +30,7 @@
 
 [stimuli.light]
 label  = "a huge bright shape moved across your eye"
+group  = "seeing"
 action = "wave your hand slowly over the fly"
 cell_class = ["photoreceptor_neuron"]
 body_part_sensory = ["retina"]
@@ -36,12 +38,14 @@ drive = 0.9
 
 [stimuli.ocelli]
 label  = "the sky got brighter, suddenly, from directly above"
+group  = "seeing"
 action = "switch the ceiling light on"
 cell_class = ["photoreceptor_neuron"]
 body_part_sensory = ["ocellus"]
 
 [stimuli.shadow_left]
 label  = "something large passed over your LEFT eye only"
+group  = "seeing"
 action = "move your hand across her from the left side"
 cell_class = ["photoreceptor_neuron"]
 body_part_sensory = ["retina"]
@@ -52,12 +56,14 @@ drive = 0.9
 
 [stimuli.smell]
 label  = "you smelled something fermenting and it was wonderful"
+group  = "smelling"
 action = "open a jar of something fermenting nearby"
 cell_class = ["olfactory_receptor_neuron"]
 body_part_sensory = ["antenna"]
 
 [stimuli.palp]
 label  = "a food smell arrived on the small mouth-antenna"
+group  = "smelling"
 action = "hold a piece of fruit close to her"
 cell_class = ["olfactory_receptor_neuron"]
 body_part_sensory = ["maxillary_palp"]
@@ -66,6 +72,7 @@ body_part_sensory = ["maxillary_palp"]
 # how a fly knows another fly has been here. (Kurtovic et al. 2007)
 [stimuli.pheromone]
 label  = "you smelled another fly. Specifically, you smelled that another fly has mated."
+group  = "smelling"
 action = "let a little of the smell of another fly drift past her"
 cell_type = ["ORN_DA1"]
 drive = 1.6
@@ -74,6 +81,7 @@ drive = 1.6
 # stressed fly gives off. (Suh et al. 2004)
 [stimuli.co2]
 label  = "you smelled carbon dioxide -- the smell of other flies being afraid"
+group  = "smelling"
 action = "breathe out, slowly, right next to her"
 cell_type = ["ORN_V"]
 drive = 1.8
@@ -87,6 +95,7 @@ drive = 1.8
 # (Semmelhack & Wang 2009)
 [stimuli.vinegar]
 label  = "you smelled cider vinegar, which is the best smell there is"
+group  = "smelling"
 action = "set down a glass of cider vinegar beside her"
 cell_type = ["ORN_DM1"]
 drive = 1.6
@@ -95,6 +104,7 @@ drive = 1.6
 
 [stimuli.taste]
 label  = "your lip bristles touched something wet and edible"
+group  = "mouth"
 action = "put a drop of something sweet where she is standing"
 cell_class = [
   "taste_bristle_gustatory_neuron",
@@ -104,6 +114,7 @@ cell_class = [
 
 [stimuli.hunger]
 label  = "your gut reported that it is empty"
+group  = "mouth"
 action = "take the food away and wait"
 cell_class = ["nutrient_sensory_neuron"]
 drive = 2.5
@@ -112,27 +123,32 @@ drive = 2.5
 
 [stimuli.touch]
 label  = "something brushed the bristles on your face"
+group  = "body"
 action = "brush her face, very gently, with a single hair"
 cell_class = ["bristle_neuron"]
 
 [stimuli.touch_left]
 label  = "something brushed the bristles on the LEFT side of your face only"
+group  = "body"
 action = "touch a hair to the left side of her face"
 cell_class = ["bristle_neuron"]
 side = "left"
 
 [stimuli.wind]
 label  = "a sound, or a wind, vibrated your antenna"
+group  = "body"
 action = "hum one low note at her"
 cell_class = ["chordotonal_organ_neuron"]
 
 [stimuli.humid]
 label  = "the air got noticeably damper"
+group  = "body"
 action = "breathe on her"
 cell_class = ["hygrosensory_receptor_neuron"]
 
 [stimuli.heat]
 label  = "the temperature changed and you did not like it"
+group  = "body"
 action = "move her near the window"
 cell_class = ["thermosensory_receptor_neuron"]
 
@@ -140,6 +156,7 @@ cell_class = ["thermosensory_receptor_neuron"]
 
 [stimuli.nothing]
 label  = "nothing happened. Nothing at all happened to you for a while."
+group  = "nothing at all"
 action = "do nothing. Sit with her and let the room be quiet."
 cell_class = ["nutrient_sensory_neuron"]
 drive = 0.05
