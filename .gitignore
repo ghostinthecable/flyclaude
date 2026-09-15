@@ -1,0 +1,23 @@
+# Connectome data: ~300 MB, CC BY-SA 4.0, fetched at runtime by flyclaude/data.py.
+# Do not commit it -- the download is free and unauthenticated.
+data/
+*.feather
+*.parquet
+*.npz
+
+# Secrets. This project needs none, but let's never find out the hard way.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# your own stimuli
+stimuli.local.toml

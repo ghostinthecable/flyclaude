@@ -1,0 +1,145 @@
+# ============================================================================
+#  Things that can happen to the fly.
+#
+#  Add your own. Each [stimuli.<key>] picks a real population of neurons out
+#  of the FlyWire dataset and excites it. Selectors are ANDed together.
+#
+#  Fields:
+#    label   (required)  what happened, told to the fly, second person
+#    action              how a human in the room would cause it -- this is
+#                        what Claude picks from, so write it as a thing to DO
+#    drive               injected current per timestep (default 1.2). Turn it
+#                        up for tiny populations, down for huge ones.
+#
+#  Selectors (at least one required, all optional, all ANDed):
+#    cell_class          e.g. "olfactory_receptor_neuron"
+#    cell_type           e.g. "ORN_DA1"  -- very specific
+#    body_part_sensory   e.g. "labellum", "retina", "antenna"
+#    side                "left" | "right" | "center"
+#    nerve               e.g. "left_antennal_nerve"
+#    super_class         e.g. "sensory"
+#    region              "optic_lobe" | "central_brain"
+#
+#  Run `flyclaude explore` to see every legal value, with counts.
+#  Put personal ones in stimuli.local.toml -- same format, gitignored,
+#  overrides anything here.
+# ============================================================================
+
+# ------------------------------------------------------------------- seeing
+
+[stimuli.light]
+label  = "a huge bright shape moved across your eye"
+action = "wave your hand slowly over the fly"
+cell_class = ["photoreceptor_neuron"]
+body_part_sensory = ["retina"]
+drive = 0.9
+
+[stimuli.ocelli]
+label  = "the sky got brighter, suddenly, from directly above"
+action = "switch the ceiling light on"
+cell_class = ["photoreceptor_neuron"]
+body_part_sensory = ["ocellus"]
+
+[stimuli.shadow_left]
+label  = "something large passed over your LEFT eye only"
+action = "move your hand across her from the left side"
+cell_class = ["photoreceptor_neuron"]
+body_part_sensory = ["retina"]
+side = "left"
+drive = 0.9
+
+# ------------------------------------------------------------------ smelling
+
+[stimuli.smell]
+label  = "you smelled something fermenting and it was wonderful"
+action = "open a jar of something fermenting nearby"
+cell_class = ["olfactory_receptor_neuron"]
+body_part_sensory = ["antenna"]
+
+[stimuli.palp]
+label  = "a food smell arrived on the small mouth-antenna"
+action = "hold a piece of fruit close to her"
+cell_class = ["olfactory_receptor_neuron"]
+body_part_sensory = ["maxillary_palp"]
+
+# ORN_DA1 is the cVA glomerulus -- the pheromone channel. These neurons are
+# how a fly knows another fly has been here. (Kurtovic et al. 2007)
+[stimuli.pheromone]
+label  = "you smelled another fly. Specifically, you smelled that another fly has mated."
+action = "let a little of the smell of another fly drift past her"
+cell_type = ["ORN_DA1"]
+drive = 1.6
+
+# ORN_V = the CO2 receptors (Gr21a/Gr63a). Flies avoid CO2; it's what a
+# stressed fly gives off. (Suh et al. 2004)
+[stimuli.co2]
+label  = "you smelled carbon dioxide -- the smell of other flies being afraid"
+action = "breathe out, slowly, right next to her"
+cell_type = ["ORN_V"]
+drive = 1.8
+# NB: in this model co2 and vinegar spread through the brain but don't reach
+# any descending neuron. That's a real result, not a bug, and the fly is told
+# as much. Cranking the drive doesn't change it; the depth is set by
+# --steps/--threshold, and the settings that force output make 43% of the
+# brain fire, which is saturation rather than propagation.
+
+# ORN_DM1 = Or42b, the main attractive-vinegar channel.
+# (Semmelhack & Wang 2009)
+[stimuli.vinegar]
+label  = "you smelled cider vinegar, which is the best smell there is"
+action = "set down a glass of cider vinegar beside her"
+cell_type = ["ORN_DM1"]
+drive = 1.6
+
+# -------------------------------------------------------------------- mouth
+
+[stimuli.taste]
+label  = "your lip bristles touched something wet and edible"
+action = "put a drop of something sweet where she is standing"
+cell_class = [
+  "taste_bristle_gustatory_neuron",
+  "taste_peg_gustatory_neuron",
+  "internal_taste_sensillum_gustatory_neuron",
+]
+
+[stimuli.hunger]
+label  = "your gut reported that it is empty"
+action = "take the food away and wait"
+cell_class = ["nutrient_sensory_neuron"]
+drive = 2.5
+
+# --------------------------------------------------------------- body & air
+
+[stimuli.touch]
+label  = "something brushed the bristles on your face"
+action = "brush her face, very gently, with a single hair"
+cell_class = ["bristle_neuron"]
+
+[stimuli.touch_left]
+label  = "something brushed the bristles on the LEFT side of your face only"
+action = "touch a hair to the left side of her face"
+cell_class = ["bristle_neuron"]
+side = "left"
+
+[stimuli.wind]
+label  = "a sound, or a wind, vibrated your antenna"
+action = "hum one low note at her"
+cell_class = ["chordotonal_organ_neuron"]
+
+[stimuli.humid]
+label  = "the air got noticeably damper"
+action = "breathe on her"
+cell_class = ["hygrosensory_receptor_neuron"]
+
+[stimuli.heat]
+label  = "the temperature changed and you did not like it"
+action = "move her near the window"
+cell_class = ["thermosensory_receptor_neuron"]
+
+# ----------------------------------------------------------------- the void
+
+[stimuli.nothing]
+label  = "nothing happened. Nothing at all happened to you for a while."
+action = "do nothing. Sit with her and let the room be quiet."
+cell_class = ["nutrient_sensory_neuron"]
+drive = 0.05
